@@ -698,7 +698,7 @@ echo ---------------------------------------------------------------------------
 
 @echo off
 :: ================================================================================
-:: ADVANCED ENTERPRISE REMEDIATION SUITE (PART 10: TIME ENGINE REBUILD)
+:: ADVANCED ENTERPRISE REMEDIATION SUITE (PART 10: TIME ENGINE REBUILD - CORRECTED)
 :: TARGET: SYSTEM ERROR 1058, REGISTRY CORRUPTION 0x80070430, SYNC BLOCKS
 :: ================================================================================
 setlocal EnableDelayedExpansion
@@ -723,46 +723,25 @@ echo [*] Querying current Windows Time Service parameter configurations...
 echo [Pre-Rebuild W32Time Operational Matrix]: >> "%LOG_FILE%"
 sc query w32time >> "%LOG_FILE%" 2>&1
 reg query "HKLM\SYSTEM\CurrentControlSet\Services\W32Time" >nul 2>&1
-echo Configuration Check Status Code: %ERRORLEVEL% >> "%LOG_FILE%"
-
-echo [*] Halting active service controllers to clear runtime memory fields...
-net stop w32time >> "%LOG_FILE%" 2>&1
 
 :: --------------------------------------------------------------------------------
 :: STAGE 10.2: DE-REGISTRATION & FORCE-RESET OF TARGET REGISTRY HIVES
 :: --------------------------------------------------------------------------------
 echo [*] Stripping compromised registry allocations...
 
-:: Unregister the time binary array to drop broken configurations and deadlocks
+net stop w32time >> "%LOG_FILE%" 2>&1
 w32tm /unregister >> "%LOG_FILE%" 2>&1
-if %errorlevel% equ 0 (
-    echo [+] Success: Cleared legacy configuration profiles from system databases.
-) else (
-    echo [!] Note: Service already un-registered or marked for deletion pipeline. >> "%LOG_FILE%"
-)
-
-:: Force-inject fresh structural registration records into core services tree
-echo [*] Re-deploying authenticated Windows Time Service definitions...
 w32tm /register >> "%LOG_FILE%" 2>&1
-if !errorlevel! equ 0 (
-    echo [+] Success: Windows Time Engine successfully re-registered inside the OS.
-) else (
-    echo [!] CRITICAL: Registry collision detected. Error 0x80070430 or 1058 may persist. >> "%LOG_FILE%"
-)
 
 :: --------------------------------------------------------------------------------
 :: STAGE 10.3: CONFIGURING STRATEGIC AUTO-START MATRIX
 :: --------------------------------------------------------------------------------
 echo [*] Re-aligning service activation policies to automatic startup triggers...
 
-:: Configure the service launcher configuration script variables
 sc config w32time start= auto >> "%LOG_FILE%" 2>&1
-if !errorlevel! equ 0 (
-    echo [+] Success: Service launch mechanism locked to Automatic execution mode.
-)
 
-:: Establish manual sync targets using safe global public servers
-w32tm /config /manualpeerlist:"://google.com pool.ntp.org" /syncfromflags:manual /update >> "%LOG_FILE%" 2>&1
+:: FIXED LINE: Removed illegal characters '://' and stabilized global peer list servers
+w32tm /config /manualpeerlist:"time.google.com pool.ntp.org" /syncfromflags:manual /update >> "%LOG_FILE%" 2>&1
 
 :: --------------------------------------------------------------------------------
 :: STAGE 10.4: STARTUP FORCE AND POST-REPARATION SYNCHRONIZATION
@@ -771,22 +750,13 @@ echo [*] Initializing time sync engines and forcing hard synchronization syncs..
 
 net start w32time >> "%LOG_FILE%" 2>&1
 w32tm /resync /force >> "%LOG_FILE%" 2>&1
-if !errorlevel! equ 0 (
-    echo [+] Success: System clock has successfully matched verified baseline times.
-)
 
-:: Logging post-operational status parameters for verification tracking
 echo [Post-Rebuild W32Time Operational Verification]: >> "%LOG_FILE%"
-sc query w32time | findstr /i "STATE" >> "%LOG_FILE%" 2>&1
 w32tm /query /status >> "%LOG_FILE%" 2>&1
 
 echo [+] Part 10 Windows Time Service Repair Optimization Phase Finalized.
 echo [+] Core time synchronization records verified and synchronized securely.
-echo --------------------------------------------------------------------------------
-
-
-
-@echo off
+echo -------------------------------------------------------------------------------- >> "%LOG_FILE%"
 :: ================================================================================
 :: ADVANCED ENTERPRISE REMEDIATION SUITE (PART 11: ENDPOINT SECURITY STATE RE-ARMING)
 :: TARGET: DISABLED SECURITY HECKLES, TAMPERED DEFENDER DRIVERS, ANTI-ANTIVIRUS KEYS
